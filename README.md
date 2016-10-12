@@ -51,6 +51,7 @@ Note pour la question 3 : la commande `lscpu` permet de lister le nombre de CPUs
 le système ainsi que le nombre de coeurs logiques par CPU. Dans l’exemple ci-dessous, le système
 possède un total de 4 CPUs logiques où chaque CPU physique possède 2 coeurs logiques :
 
+````
 Architecture: x86_64
 CPU op-mode(s): 32-bit, 64-bit
 Byte Order: Little Endian
@@ -58,7 +59,7 @@ CPU(s): 4
 On-line CPU(s) list: 0-3
 Thread(s) per core: 2
 Core(s) per socket: 2
-
+````
 
 ### Informations utiles
 #### Validité des caractères
@@ -110,7 +111,7 @@ elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
 
 ### Code
 Le code à rendre doit respecter les consignes décrites dans le document « *Consignes pour l’écriture
-du code* » sur la page CyberLearn du cours.
+du code* » sur la [page CyberLearn](https://cyberlearn.hes-so.ch/course/view.php?id=6341) du cours.
 
 ### Travail à rendre
 
