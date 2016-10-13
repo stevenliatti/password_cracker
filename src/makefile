@@ -1,5 +1,5 @@
 CC = gcc
-FLAGS = -g -Wall -Wextra -std=c99
+FLAGS = -g -Wall -std=c99
 SRCS=$(wildcard *.c)
 OUT=$(SRCS:%.c=%)
 
@@ -9,6 +9,6 @@ all: $(OUT)
 	$(CC) $(FLAGS) $< -lcrypt -o $@ -lpthread
 
 clean:
-	rm -rf $(OUT)
+	rm -rf $(OUT) *~
 
 rebuild: clean all

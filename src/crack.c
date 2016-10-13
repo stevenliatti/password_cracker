@@ -1,5 +1,3 @@
-#define _XOPEN_SOURCE
-#include <unistd.h>
 #define _GNU_SOURCE
 #include <crypt.h>
 
