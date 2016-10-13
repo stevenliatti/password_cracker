@@ -72,8 +72,7 @@ La fonction `crypt_r` permet d’encrypter une chaîne de caractères avec un *s
 d’obtenir un *hash*, comme montré ci-dessous:
 
 ````
-struct crypt_data *cdata = (struct crypt_data *);
-malloc(sizeof(struct crypt_data));
+struct crypt_data *cdata = (struct crypt_data *) malloc(sizeof(struct crypt_data));
 cdata->initialized = 0;
 char *hash = crypt_r(password, salt, cdata);
 ````
