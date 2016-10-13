@@ -13,21 +13,6 @@ typedef struct passwd_st {
 	struct crypt_data* cdata;
 } passwd_st;
 
-char* init_seedchars() {
-	char* seedchars = malloc(sizeof(char)*65);
-	for (int i = 0; i < 10; i++) {
-		seedchars[i] = i + '0';
-	}
-	for (int i = 0; i < 26; i++) {
-		seedchars[i+10] = i + 'A';
-		seedchars[i+36] = i + 'a';
-	}
-	seedchars[62] = '!';
-	seedchars[63] = '*';
-	seedchars[64] = '~';
-	return seedchars;
-}
-
 void* thread(void* arg) {
 	passwd_st* temp = (passwd_st*)arg;
 	// test de la fonction crypt_r
@@ -42,7 +27,8 @@ int main(int argc, char** argv) {
 		passwd_st* passwd = malloc(sizeof(passwd_st));
 		passwd->hash = argv[1];
 		passwd->salt = argv[2];
-		passwd->seedchars = init_seedchars();
+		passwd->seedchars = "0123456789ABCDEFGHIJKLMNOPQRSTUVW"
+									"XYZabcdefghijklmnopqrstuvwxyz!*~";
 		passwd->threads_nb = atoi(argv[3]);
 		passwd->cdata = (struct crypt_data *)malloc(sizeof(struct crypt_data));
 		passwd->cdata->initialized = 0;
