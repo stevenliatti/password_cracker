@@ -36,6 +36,7 @@ int main(int argc, char** argv) {
 				return EXIT_FAILURE;
 			}
 		}
+		free(cdata);
 		return EXIT_SUCCESS;
 	} else {
 		fprintf(stderr,"Invalid argument count !\n");

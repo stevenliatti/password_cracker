@@ -1,5 +1,5 @@
 #!/bin/bash
-make
+make rebuild
 if [ ! -f crack ]; then
 	echo "executable introuvable"
 	exit 0
