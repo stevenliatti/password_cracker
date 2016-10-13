@@ -13,6 +13,21 @@ typedef struct passwd_st {
 	struct crypt_data* cdata;
 } passwd_st;
 
+passwd_st* init_passwd(char** argv) {
+	int threads_nb = atoi(argv[3]);
+	passwd_st* passwd = malloc(sizeof(passwd_st)*threads_nb);
+	for (int i = 0; i < threads_nb; i++) {
+		passwd[i].hash = argv[1];
+		passwd[i].salt = argv[2];
+		passwd[i].seedchars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+							"abcdefghijklmnopqrstuvwxyz!*~";
+		passwd[i].threads_nb = atoi(argv[3]);
+		passwd[i].cdata = malloc(sizeof(struct crypt_data));
+		passwd[i].cdata->initialized = 0;
+	}
+	return passwd;
+}
+
 void* thread(void* arg) {
 	passwd_st* temp = (passwd_st*)arg;
 	// test de la fonction crypt_r
@@ -23,25 +38,17 @@ void* thread(void* arg) {
 
 int main(int argc, char** argv) {
 	if (argc == 4) {
-		// initialisation des variables
-		passwd_st* passwd = malloc(sizeof(passwd_st));
-		passwd->hash = argv[1];
-		passwd->salt = argv[2];
-		passwd->seedchars = "0123456789ABCDEFGHIJKLMNOPQRSTUVW"
-									"XYZabcdefghijklmnopqrstuvwxyz!*~";
-		passwd->threads_nb = atoi(argv[3]);
-		passwd->cdata = (struct crypt_data *)malloc(sizeof(struct crypt_data));
-		passwd->cdata->initialized = 0;
-
-		// initialisation des threads
-		pthread_t t[passwd->threads_nb];
-		for (int i = 0; i < passwd->threads_nb; i++) {
-			if (pthread_create(&t[i], NULL, thread, passwd) != 0) {
+		int threads_nb = atoi(argv[3]);
+		// initialisation des threads et des structures
+		pthread_t t[threads_nb];
+		passwd_st* passwd = init_passwd(argv);
+		for (int i = 0; i < threads_nb; i++) {
+			if (pthread_create(&t[i], NULL, thread, &passwd[i]) != 0) {
 				fprintf(stderr, "pthread_create failed!\n");
 				return EXIT_FAILURE;
 			}
 		}
-		for (int i = 0; i < passwd->threads_nb; i++) {
+		for (int i = 0; i < threads_nb; i++) {
 			if (pthread_join(t[i], NULL) != 0) {
 				fprintf(stderr, "pthread_join failed!\n");
 				return EXIT_FAILURE;
