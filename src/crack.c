@@ -30,6 +30,17 @@ passwd_st* init_passwd(char** argv) {
 	return passwd;
 }
 
+// Zone Orphée
+
+
+
+// Zone Ludo
+
+
+
+// Zone Steven
+
+
 void* thread(void* arg) {
 	passwd_st* temp = (passwd_st*)arg;
 	// test de la fonction crypt_r
