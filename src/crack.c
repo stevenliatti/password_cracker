@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
 
 #define CHECK_ERR(expr, msg) if (expr) { fprintf(stderr, "%s\n", msg); return EXIT_FAILURE; }
 #define ALPHABET "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!*~"
@@ -13,6 +14,8 @@ typedef struct passwd_st {
 	char* salt;
 	char* seedchars;
 	int threads_nb;
+	int index;
+	int jumps_nb;
 	struct crypt_data* cdata;
 } passwd_st;
 
@@ -24,6 +27,8 @@ passwd_st* init_passwd(char** argv) {
 		passwd[i].salt = argv[2];
 		passwd[i].seedchars = ALPHABET;
 		passwd[i].threads_nb = atoi(argv[3]);
+		passwd[i].index = i;
+		passwd[i].jumps_nb = (66-i) / threads_nb;
 		passwd[i].cdata = malloc(sizeof(struct crypt_data));
 		passwd[i].cdata->initialized = 0;
 	}
@@ -31,7 +36,29 @@ passwd_st* init_passwd(char** argv) {
 }
 
 // Zone Orphée
-
+char* func(passwd_st* passwd, int* iter) {
+	char* temp = malloc(sizeof(char)*(*iter));
+	char* hash;
+	int pos = passwd->index;
+	size_t found = 0;
+	for (int i = 0; i < *iter; i++) {
+		for (int j = 0; j < passwd->jumps_nb; j++) {
+			temp[i] = passwd->seedchars[pos];
+			hash = crypt_r(temp, passwd->salt, passwd->cdata);
+			printf("%s\n",temp);
+			if (hash == passwd->hash) {
+				found = 1;
+				break;
+			}
+			pos += passwd->threads_nb;
+		}
+	}
+	if (!found) {
+		return("pas trouvé!");
+	} else {
+		return temp;
+	}
+}
 
 
 // Zone Ludo
@@ -52,10 +79,29 @@ void compute_steven(passwd_st* passwd, int nb_char_fixed, int nb_of_call) {
 
 
 void* thread(void* arg) {
-	passwd_st* temp = (passwd_st*)arg;
+	passwd_st* passwd = (passwd_st*)arg;
 	// test de la fonction crypt_r
 	char* hash = crypt_r("Steven aime sucer, mais pas autant qu'Orphée", temp->salt, temp->cdata);
 	printf("%s\n",hash);
+/*	char* hash = crypt_r("Steven aime sucer", temp->salt, temp->cdata);*/
+	int iter = 1;
+	char word[iter];
+	char* hash;
+	int pos = passwd->index;
+	size_t found = 0;
+	for (int j = 0; j < passwd->jumps_nb; j++) {
+		word[0] = passwd->seedchars[pos];
+		hash = crypt_r(word, passwd->salt, passwd->cdata);
+		if (!strcmp(hash,passwd->hash)) {
+			found = 1;
+		}
+		pos += passwd->threads_nb;
+	}
+	if (found) {
+		printf("trouvé!\n");
+	} else {
+		printf("pas trouvé!\n");
+	}
 	return NULL;
 }
 
