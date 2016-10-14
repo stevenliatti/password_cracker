@@ -39,12 +39,22 @@ passwd_st* init_passwd(char** argv) {
 
 
 // Zone Steven
+void compute_steven(passwd_st* passwd, int nb_char_fixed, int nb_of_call) {
+	char* fixed = malloc(sizeof(char) * nb_char_fixed);
+	
+
+	for (int i = 0; i < passwd->size; i++) {
+		
+	}
+	free(fixed);
+	compute_steven();
+}
 
 
 void* thread(void* arg) {
 	passwd_st* temp = (passwd_st*)arg;
 	// test de la fonction crypt_r
-	char* hash = crypt_r("Steven aime sucer", temp->salt, temp->cdata);
+	char* hash = crypt_r("Steven aime sucer, mais pas autant qu'Orphée", temp->salt, temp->cdata);
 	printf("%s\n",hash);
 	return NULL;
 }
