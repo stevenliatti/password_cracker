@@ -4,5 +4,5 @@ if [ ! -f crack ]; then
 	echo "executable introuvable"
 	exit 0
 else
-	./crack oooo 43 64
+	./crack 1234 43 10
 fi
