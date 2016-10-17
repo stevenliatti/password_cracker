@@ -31,14 +31,22 @@ passwd_st* init_passwd(char** argv) {
 }
 
 void func(passwd_st* passwd, char* str, int index, int index_max) {
-	for (int i = passwd->index; i < seedchars_size; i+=passwd->threads_nb) {
-		str[index] = passwd->seedchars[i];
+	// for (int i = passwd->index; i < seedchars_size; i+=passwd->threads_nb) {
+	int cnt = 0;
+	if (index == index_max) {
+		cnt = passwd->index;
+	}
+	while (cnt < seedchars_size) {
 		if (index == index_max) {
-			printf("%s\n", str);
-			// if (!strcmp(str,passwd->hash)) {
-			// 	return str;
-			// }
+			str[index] = passwd->seedchars[cnt];
+			// printf("%s\n", str);
+			cnt += passwd->threads_nb;
+			if (!strcmp(str,passwd->hash)) {
+				printf("%s\n", str);
+			}
 		} else { // condition pour aller à la dernière lettre du mdp
+			str[index] = passwd->seedchars[cnt];
+			cnt++;
 			func(passwd,str,index+1,index_max);
 		}
 	}
@@ -50,6 +58,7 @@ void* thread(void* arg) {
 	// initialisation du tableau contenant le mdp à tester
 	char* str = malloc(passwd_size + 1);
 	for (int i = 0; i < passwd_size; i++) {
+		// str[i] = passwd->seedchars[passwd->index];
 		// on appelle la fonction autant de fois que la taille du mdp
 		func(passwd,str,0,i);
 	}

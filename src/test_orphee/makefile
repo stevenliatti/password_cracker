@@ -9,6 +9,6 @@ all: $(OUT)
 	$(CC) $(FLAGS) $< -o $@ -lpthread
 
 clean:
-	rm -rf $(OUT) *~
+	rm -rf $(OUT) *~ *.dSYM
 
 rebuild: clean all
