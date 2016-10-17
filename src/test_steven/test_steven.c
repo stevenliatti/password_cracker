@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(int argc, char** argv) {
+int main() {
 	struct crypt_data *cdata = malloc(sizeof(struct crypt_data));
 	cdata->initialized = 0;
 	char *hash = crypt_r("12345678", "43", cdata);
