@@ -10,7 +10,7 @@
 #define CHECK_ERR(expr, msg) if (expr) { fprintf(stderr, "%s\n", msg); return EXIT_FAILURE; }
 #define SEEDCHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!*~"
 
-const int seedchars_size = 65;
+const int seedchars_size = 10;
 const int passwd_size = 8;
 
 struct timespec start, finish, finish2;
@@ -55,7 +55,7 @@ void func(passwd_st* passwd, char* str, int index, int index_max) {
 				double elapsed = finish.tv_sec - start.tv_sec;
 				elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
 				FILE *f = fopen("found.txt", "w");
-				fprintf(f, "\nTemps d'exécution pour trouver le mot de passe : %f\nMot de passe : %s\n", elapsed, str);
+				fprintf(f, "Temps d'exécution pour trouver le mot de passe : %f\nMot de passe : %s\n", elapsed, str);
 				fclose(f);
 			}
 		} else { // condition pour aller à la dernière lettre du mdp
