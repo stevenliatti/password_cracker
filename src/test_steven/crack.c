@@ -11,7 +11,7 @@
 #define CHECK_ERR(expr, msg) if (expr) { fprintf(stderr, "%s\n", msg); return EXIT_FAILURE; }
 // ce sera plus opti de le définir dans cet ordre, tester lettres minuscules et chiffres en premier
 #define ALPHABET "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!*~"
-#define PASSWORD_SIZE 5
+#define PASSWORD_SIZE 8
 
 typedef struct passwd_st {
 	char* hash;
