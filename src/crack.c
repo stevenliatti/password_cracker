@@ -5,17 +5,20 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <time.h>
+#include <stdbool.h>
 
 #define CHECK_ERR(expr, msg) if (expr) { fprintf(stderr, "%s\n", msg); return EXIT_FAILURE; }
-#define ALPHABET "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!*~"
+
+const char* alphabet = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!*~";
+const int alphabet_size = 65;
+const int passwd_size = 8;
 
 typedef struct passwd_st {
 	char* hash;
 	char* salt;
-	char* seedchars;
 	int threads_nb;
-	int index;
-	int jumps_nb;
+	int thread_id;
 	struct crypt_data* cdata;
 } passwd_st;
 
@@ -25,101 +28,83 @@ passwd_st* init_passwd(char** argv) {
 	for (int i = 0; i < threads_nb; i++) {
 		passwd[i].hash = argv[1];
 		passwd[i].salt = argv[2];
-		passwd[i].seedchars = ALPHABET;
 		passwd[i].threads_nb = atoi(argv[3]);
-		passwd[i].index = i;
-		passwd[i].jumps_nb = (66-i) / threads_nb;
+		passwd[i].thread_id = i;
 		passwd[i].cdata = malloc(sizeof(struct crypt_data));
 		passwd[i].cdata->initialized = 0;
 	}
 	return passwd;
 }
 
-// Zone Orphée
-char* func(passwd_st* passwd, int* iter) {
-	char* temp = malloc(sizeof(char)*(*iter));
-	char* hash;
-	int pos = passwd->index;
-	size_t found = 0;
-	for (int i = 0; i < *iter; i++) {
-		for (int j = 0; j < passwd->jumps_nb; j++) {
-			temp[i] = passwd->seedchars[pos];
-			hash = crypt_r(temp, passwd->salt, passwd->cdata);
-			printf("%s\n",temp);
-			if (hash == passwd->hash) {
-				found = 1;
-				break;
+void func(passwd_st* passwd, char* str, int index, int index_max, bool* found) {
+	if (!*found) {
+		int cnt = 0;
+		if (index == index_max) {
+			cnt = passwd->thread_id;
+		}
+		while (cnt < alphabet_size) {
+			if (index == index_max) {
+				str[index] = alphabet[cnt];
+				char* hash = crypt_r(str, passwd->salt, passwd->cdata);
+				cnt += passwd->threads_nb;
+				if (strcmp(hash,passwd->hash) == 0) {
+					printf("%s\n", str);
+					*found = true;
+				}
 			}
-			pos += passwd->threads_nb;
+			else { // condition pour aller à la dernière lettre du mdp
+				str[index] = alphabet[cnt];
+				cnt++;
+				func(passwd, str, index + 1, index_max, found);
+			}
 		}
 	}
-	if (!found) {
-		return("pas trouvé!");
-	} else {
-		return temp;
-	}
 }
-
-
-// Zone Ludo
-
-
-
-// Zone Steven
-void compute_steven(passwd_st* passwd, int nb_char_fixed, int nb_of_call) {
-	char* fixed = malloc(sizeof(char) * nb_char_fixed);
-	
-
-	for (int i = 0; i < passwd->size; i++) {
-		
-	}
-	free(fixed);
-	compute_steven();
-}
-
 
 void* thread(void* arg) {
-	passwd_st* passwd = (passwd_st*)arg;
-	// test de la fonction crypt_r
-	char* hash = crypt_r("Steven aime sucer, mais pas autant qu'Orphée", temp->salt, temp->cdata);
-	printf("%s\n",hash);
-/*	char* hash = crypt_r("Steven aime sucer", temp->salt, temp->cdata);*/
-	int iter = 1;
-	char word[iter];
-	char* hash;
-	int pos = passwd->index;
-	size_t found = 0;
-	for (int j = 0; j < passwd->jumps_nb; j++) {
-		word[0] = passwd->seedchars[pos];
-		hash = crypt_r(word, passwd->salt, passwd->cdata);
-		if (!strcmp(hash,passwd->hash)) {
-			found = 1;
+	passwd_st* passwd = (passwd_st*) arg;
+	// initialisation du tableau contenant le mdp à tester
+	char* str = malloc(passwd_size + 1);
+	static bool found = false;
+	for (int i = 0; i < passwd_size; i++) {
+		// on appelle la fonction autant de fois que la taille du mdp
+		if (!found) {
+			func(passwd, str, 0, i, &found);
 		}
-		pos += passwd->threads_nb;
+		else {
+			break;
+		}
 	}
-	if (found) {
-		printf("trouvé!\n");
-	} else {
-		printf("pas trouvé!\n");
-	}
-	return NULL;
+	free(str);
+	return &found;
 }
 
 int main(int argc, char** argv) {
 	if (argc == 4) {
+		struct timespec start, finish;
+		clock_gettime(CLOCK_MONOTONIC, &start);
 		int threads_nb = atoi(argv[3]);
 		// initialisation des threads et des structures
 		pthread_t t[threads_nb];
 		passwd_st* passwd = init_passwd(argv);
+		bool* found;
 		for (int i = 0; i < threads_nb; i++) {
 			CHECK_ERR(pthread_create(&t[i], NULL, thread, &passwd[i]), "pthread_create failed!");
 		}
 		for (int i = 0; i < threads_nb; i++) {
-			CHECK_ERR(pthread_join(t[i], NULL), "pthread_join failed!");
+			CHECK_ERR(pthread_join(t[i], (void**)&found), "pthread_join failed!");
 		}
+		if (!*found) {
+			printf("No match found\n");
+		}
+		clock_gettime(CLOCK_MONOTONIC, &finish);
+		double elapsed = finish.tv_sec - start.tv_sec;
+		elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+		printf("%f\n", elapsed);
 		return EXIT_SUCCESS;
-	} else {
-		fprintf(stderr,"Invalid argument count !\n");
+	}
+	else {
+		fprintf(stderr, "Invalid argument count !\n");
 		return EXIT_FAILURE;
 	}
 }
