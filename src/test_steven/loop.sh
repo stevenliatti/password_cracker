@@ -1,5 +1,5 @@
 #!/bin/bash
 while read line
 do
-	echo -e "$line"
-done < test_hash.txt
+	./crack "$line" 43 8 >> result.txt
+done < hash.txt

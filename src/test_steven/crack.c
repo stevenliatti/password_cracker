@@ -53,7 +53,7 @@ void func(passwd_st* passwd, char* str, int index, int index_max, bool* found) {
 				char* hash = crypt_r(str, passwd->salt, passwd->cdata);
 				cnt += passwd->threads_nb;
 				if (strcmp(hash,passwd->hash) == 0) {
-					printf("%s\n", str);
+					printf("%s ", str);
 					*found = true;
 				}
 			}
@@ -73,7 +73,6 @@ void* thread(void* arg) {
 	static bool found = false;
 	for (int i = 0; i < passwd->passwd_size; i++) {
 		// on appelle la fonction autant de fois que la taille du mdp
-		printf("%d\n", i + 1);
 		if (!found)
 			func(passwd, str, 0, i, &found);
 		else
