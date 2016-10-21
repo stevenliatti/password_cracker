@@ -1,0 +1,2 @@
+groumf 4298.840536 // = 71 minutes. Avec 8 threads sur une machine du 4ème
+groumf 6016.309169 // = 1h 40min. Idem avec 4 threads
