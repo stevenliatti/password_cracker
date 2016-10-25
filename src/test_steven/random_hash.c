@@ -17,7 +17,7 @@ int main() {
 	srand(random.tv_nsec);
 
 	int size_pass = rand() % (passwd_size_max - 2) + 3;
-	int nb_threads = rand() % 102 + 1;
+	int nb_threads = rand() % alphabet_size + 1;
 
 	char str[size_pass];
 	for (int i = 0; i < size_pass; i++) {
