@@ -9,16 +9,16 @@
 #include <stdbool.h>
 
 #define CHECK_ERR(expr, msg) if (expr) { fprintf(stderr, "%s\n", msg); return EXIT_FAILURE; }
-// ce sera plus opti de le définir dans cet ordre, tester lettres minuscules et chiffres en premier
-#define ALPHABET "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!*~"
-#define PASSWORD_SIZE 8
+
+const char* alphabet = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!*~";
+const int alphabet_size = 65;
+const int passwd_size = 8;
+
+struct timespec start, found_pass, finish;
 
 typedef struct passwd_st {
 	char* hash;
 	char* salt;
-	char* alphabet;
-	int alphabet_size;
-	int passwd_size;
 	int threads_nb;
 	int thread_id;
 	struct crypt_data* cdata;
@@ -30,9 +30,6 @@ passwd_st* init_passwd(char** argv) {
 	for (int i = 0; i < threads_nb; i++) {
 		passwd[i].hash = argv[1];
 		passwd[i].salt = argv[2];
-		passwd[i].alphabet = ALPHABET;
-		passwd[i].alphabet_size = strlen(passwd[i].alphabet);
-		passwd[i].passwd_size = PASSWORD_SIZE;
 		passwd[i].threads_nb = atoi(argv[3]);
 		passwd[i].thread_id = i;
 		passwd[i].cdata = malloc(sizeof(struct crypt_data));
@@ -47,18 +44,22 @@ void func(passwd_st* passwd, char* str, int index, int index_max, bool* found) {
 		if (index == index_max) {
 			cnt = passwd->thread_id;
 		}
-		while (cnt < passwd->alphabet_size) {
+		while (cnt < alphabet_size) {
 			if (index == index_max) {
-				str[index] = passwd->alphabet[cnt];
+				str[index] = alphabet[cnt];
 				char* hash = crypt_r(str, passwd->salt, passwd->cdata);
 				cnt += passwd->threads_nb;
 				if (strcmp(hash,passwd->hash) == 0) {
-					printf("%s ", str);
+					printf("%s;", str);
 					*found = true;
+					clock_gettime(CLOCK_MONOTONIC, &found_pass);
+					double elapsed = found_pass.tv_sec - start.tv_sec;
+					elapsed += (found_pass.tv_nsec - start.tv_nsec) / 1000000000.0;
+					printf("%f;", elapsed);
 				}
 			}
 			else { // condition pour aller à la dernière lettre du mdp
-				str[index] = passwd->alphabet[cnt];
+				str[index] = alphabet[cnt];
 				cnt++;
 				func(passwd, str, index + 1, index_max, found);
 			}
@@ -69,37 +70,42 @@ void func(passwd_st* passwd, char* str, int index, int index_max, bool* found) {
 void* thread(void* arg) {
 	passwd_st* passwd = (passwd_st*) arg;
 	// initialisation du tableau contenant le mdp à tester
-	char* str = malloc(passwd->passwd_size + 1);
+	char* str = malloc(passwd_size + 1);
 	static bool found = false;
-	for (int i = 0; i < passwd->passwd_size; i++) {
+	for (int i = 0; i < passwd_size; i++) {
 		// on appelle la fonction autant de fois que la taille du mdp
-		if (!found)
+		if (!found) {
 			func(passwd, str, 0, i, &found);
-		else
+		}
+		else {
 			break;
+		}
 	}
 	free(str);
-	return NULL;
+	return &found;
 }
 
 int main(int argc, char** argv) {
 	if (argc == 4) {
-		struct timespec start, finish;
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		int threads_nb = atoi(argv[3]);
 		// initialisation des threads et des structures
 		pthread_t t[threads_nb];
 		passwd_st* passwd = init_passwd(argv);
+		bool* found;
 		for (int i = 0; i < threads_nb; i++) {
 			CHECK_ERR(pthread_create(&t[i], NULL, thread, &passwd[i]), "pthread_create failed!");
 		}
 		for (int i = 0; i < threads_nb; i++) {
-			CHECK_ERR(pthread_join(t[i], NULL), "pthread_join failed!");
+			CHECK_ERR(pthread_join(t[i], (void**)&found), "pthread_join failed!");
+		}
+		if (!*found) {
+			printf("No match found\n");
 		}
 		clock_gettime(CLOCK_MONOTONIC, &finish);
 		double elapsed = finish.tv_sec - start.tv_sec;
 		elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
-		printf("%f\n", elapsed);
+		printf("%f;%d\n", elapsed, threads_nb);
 		return EXIT_SUCCESS;
 	}
 	else {

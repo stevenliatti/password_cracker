@@ -8,7 +8,7 @@ int main() {
 	struct crypt_data *cdata = malloc(sizeof(struct crypt_data));
 	cdata->initialized = 0;
 	char *hash;
-	char *str;
+	char *str = NULL;
 	FILE *f = fopen("hash.txt", "w");
 
 	for (int i = 1; i < 10000; i++) {
