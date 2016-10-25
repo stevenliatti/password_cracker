@@ -18,7 +18,6 @@ int main() {
 
 	int size_pass = rand() % (passwd_size_max - 2) + 3;
 	int nb_threads = rand() % 102 + 1;
-	printf("%d\n", size_pass);
 
 	char str[size_pass];
 	for (int i = 0; i < size_pass; i++) {
