@@ -11,18 +11,16 @@
 
 int pass_len(long position, int alphabet_size) {
 	int i = 1;
-	bool check = false;
 	long min = 0;
 	long max = (long) (pow(alphabet_size, i));
 	
-	while (!check) {
-		check = (min <= position) && (position < max);
+	while (!(min <= position && position < max)) {
 		min = max;
 		i++;
 		max += (long) (pow(alphabet_size, i));
 	}
 
-	return i - 1;
+	return i;
 }
 
 int main() {
