@@ -3,33 +3,30 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include <stdbool.h>
+
+const int alphabet_size = 2;
+const int passwd_size = 8;
+
+long pass_len(long position) {
+	int i = 1;
+	bool check = false;
+	long min = 0;
+	long max = (long) (pow(alphabet_size, i));
+	while (!check) {
+		check = (min <= position) && (position < max);
+		min += max;
+		i++;
+		max += (long) (pow(alphabet_size, i));
+	}
+
+	return i;
+}
 
 int main() {
-	struct crypt_data *cdata = malloc(sizeof(struct crypt_data));
-	cdata->initialized = 0;
-	char *hash = crypt_r("12345678", "43", cdata);
-
-
-	printf("%s\n", hash);
-
-
-	for (int i = 0; i < 100; i += 4) {
-		printf("%d  ", i);
+	// printf("%d\n", (int) pow(2,4));
+	for (long i = 0; i < 14; i++) {
+		printf("%ld\n", pass_len(i));
 	}
-	printf("\n");
-
-	for (int i = 1; i < 100; i += 4) {
-		printf("%d  ", i);
-	}
-	printf("\n");
-
-	for (int i = 2; i < 100; i += 4) {
-		printf("%d  ", i);
-	}
-	printf("\n");
-
-	for (int i = 3; i < 100; i += 4) {
-		printf("%d  ", i);
-	}
-	printf("\n");
 }

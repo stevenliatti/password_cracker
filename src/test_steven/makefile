@@ -6,7 +6,7 @@ OUT=$(SRCS:%.c=%)
 all: $(OUT)
 
 %: %.c
-	$(CC) $(FLAGS) $< -lcrypt -o $@ -lpthread
+	$(CC) $(FLAGS) $< -lcrypt -lm -o $@ -lpthread
 
 clean:
 	rm -rf $(OUT) *~ *.dSYM

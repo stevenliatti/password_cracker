@@ -14,8 +14,6 @@ const char* alphabet = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRST
 const int alphabet_size = 65;
 const int passwd_size = 8;
 
-struct timespec start, found_pass, finish;
-
 typedef struct passwd_st {
 	char* hash;
 	char* salt;
@@ -38,55 +36,29 @@ passwd_st* init_passwd(char** argv) {
 	return passwd;
 }
 
-void func(passwd_st* passwd, char* str, int index, int index_max, bool* found) {
-	if (!*found) {
-		int cnt = 0;
-		if (index == index_max) {
-			cnt = passwd->thread_id;
-		}
-		while (cnt < alphabet_size) {
-			if (index == index_max) {
-				str[index] = alphabet[cnt];
-				char* hash = crypt_r(str, passwd->salt, passwd->cdata);
-				cnt += passwd->threads_nb;
-				if (strcmp(hash,passwd->hash) == 0) {
-					printf("%s;", str);
-					*found = true;
-					clock_gettime(CLOCK_MONOTONIC, &found_pass);
-					double elapsed = found_pass.tv_sec - start.tv_sec;
-					elapsed += (found_pass.tv_nsec - start.tv_nsec) / 1000000000.0;
-					printf("%f;", elapsed);
-				}
-			}
-			else { // condition pour aller à la dernière lettre du mdp
-				str[index] = alphabet[cnt];
-				cnt++;
-				func(passwd, str, index + 1, index_max, found);
-			}
-		}
-	}
+char* gen_str(long position) {
+	char* str;
+	
 }
 
 void* thread(void* arg) {
 	passwd_st* passwd = (passwd_st*) arg;
-	// initialisation du tableau contenant le mdp à tester
 	char* str = malloc(passwd_size + 1);
 	static bool found = false;
-	for (int i = 0; i < passwd_size; i++) {
-		// on appelle la fonction autant de fois que la taille du mdp
-		if (!found) {
-			func(passwd, str, 0, i, &found);
-		}
-		else {
-			break;
-		}
-	}
+	long position = passwd->thread_id;
+
+	do {
+		str = gen_str(position);
+		position += passwd->threads_nb;
+	} while (strcmp(crypt_r(str, passwd->salt, passwd->cdata), passwd->hash) != 0);
 	free(str);
+
 	return &found;
 }
 
 int main(int argc, char** argv) {
 	if (argc == 4) {
+		struct timespec start, finish;
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		int threads_nb = atoi(argv[3]);
 		// initialisation des threads et des structures
@@ -105,7 +77,7 @@ int main(int argc, char** argv) {
 		clock_gettime(CLOCK_MONOTONIC, &finish);
 		double elapsed = finish.tv_sec - start.tv_sec;
 		elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
-		printf("%f;%d\n", elapsed, threads_nb);
+		printf("%f\n", elapsed);
 		return EXIT_SUCCESS;
 	}
 	else {
