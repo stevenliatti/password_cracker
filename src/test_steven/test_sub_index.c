@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <assert.h>
 
-const int alphabet_size = 2;
+const int alphabet_size = 3;
 
 int pass_len(long position) {
 	int i = 1;
@@ -23,7 +23,7 @@ int pass_len(long position) {
 	return i;
 }
 
-long sub_str(int pass_len_actual, int pass_len_choose, long position) {
+long sub_index(int pass_len_actual, int pass_len_choose, long position) {
 	if (pass_len_actual == pass_len_choose) {
 		return position;
 	}
@@ -33,7 +33,7 @@ long sub_str(int pass_len_actual, int pass_len_choose, long position) {
 		while (pass_len(new_position) == pass_len_actual) {
 			new_position = new_position - past_position;
 		}
-		return sub_str(pass_len_actual - 1, pass_len_choose, new_position);
+		return sub_index(pass_len_actual - 1, pass_len_choose, new_position);
 	}
 }
 
@@ -42,6 +42,9 @@ int main() {
 		int pass_len_actual = pass_len(i);
 		int pass_len_choose = pass_len_actual - 1;
 		long position = i;
-		printf("De %d on va à %ld\n", i, sub_str(pass_len_actual, pass_len_choose, position));
+		long str = sub_index(pass_len_actual, pass_len_choose, position);
+		printf("De %d on va à %ld\n", i, str);
 	}
+
+	printf("%ld\n", sub_index(1, 0, 2));
 }
