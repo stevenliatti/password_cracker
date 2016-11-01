@@ -29,6 +29,6 @@ int main() {
       strcat(temp,affichage);
       strcpy(affichage,temp);
     }
-    printf("%d en base %d = %s\n",i,alphabet_size,affichage);
+    printf("%d = %s\n",alphabet_size,affichage);
   }
 }
