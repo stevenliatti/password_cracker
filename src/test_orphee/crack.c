@@ -1,5 +1,5 @@
-#define _GNU_SOURCE
-#include <crypt.h>
+// #define _GNU_SOURCE
+// #include <crypt.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +18,7 @@ typedef struct passwd_st {
 	char* seedchars;
 	int threads_nb;
 	int index;
-	struct crypt_data* cdata;
+	// struct crypt_data* cdata;
 } passwd_st;
 
 passwd_st* init_passwd(char** argv) {
@@ -30,8 +30,8 @@ passwd_st* init_passwd(char** argv) {
 		passwd[i].seedchars = SEEDCHARS;
 		passwd[i].threads_nb = atoi(argv[3]);
 		passwd[i].index = i;
-		passwd[i].cdata = malloc(sizeof(struct crypt_data));
-		passwd[i].cdata->initialized = 0;
+		// passwd[i].cdata = malloc(sizeof(struct crypt_data));
+		// passwd[i].cdata->initialized = 0;
 	}
 	return passwd;
 }
@@ -44,12 +44,12 @@ void func(passwd_st* passwd, char* str, int index, int index_max) {
 	while (cnt < seedchars_size) {
 		if (index == index_max) {
 			str[index] = passwd->seedchars[cnt];
-			char* hash = crypt_r(str, passwd->salt, passwd->cdata);
+			// char* hash = crypt_r(str, passwd->salt, passwd->cdata);
 			// printf("%s\n", str);
 			cnt += passwd->threads_nb;
-			if (!strcmp(hash,passwd->hash)) {
-				printf("%s\n", str);
-			}
+			// if (!strcmp(hash,passwd->hash)) {
+			// 	printf("%s\n", str);
+			// }
 		} else { // condition pour aller à la dernière lettre du mdp
 			str[index] = passwd->seedchars[cnt];
 			cnt++;
