@@ -128,7 +128,7 @@ void* thread(void* arg) {
 		position += passwd->threads_nb;
 
 		if (strcmp(crypt_r(str, passwd->salt, passwd->cdata), passwd->hash) == 0) {
-			printf("%s\n", str);
+			//printf("%s\n", str);
 			*(passwd->found) = true;
 		}
 	}
@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
 		clock_gettime(CLOCK_MONOTONIC, &finish);
 		double elapsed = finish.tv_sec - start.tv_sec;
 		elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
-		printf("%f\n", elapsed);
+		printf("%d;%f\n", threads_nb, elapsed);
 		return EXIT_SUCCESS;
 	}
 	else {
