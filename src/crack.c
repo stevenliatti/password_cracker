@@ -82,12 +82,12 @@ void free_passwd(passwd_st* passwd) {
 int pass_len(long position, long* tab_pow) {
 	int len = 1;
 	long min = 0;
-	long max = tab_pow[i];
+	long max = tab_pow[len];
 	
 	while (!(min <= position && position < max)) {
 		min = max;
 		len++;
-		max += tab_pow[i];
+		max += tab_pow[len];
 	}
 
 	return len;
