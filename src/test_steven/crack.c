@@ -22,6 +22,7 @@ typedef struct passwd_st {
 	int thread_id;
 	struct crypt_data* cdata;
 	bool* found;
+	long* tab_pow;
 } passwd_st;
 
 passwd_st* init_passwd(char** argv) {
@@ -29,6 +30,13 @@ passwd_st* init_passwd(char** argv) {
 	passwd_st* passwd = malloc(sizeof(passwd_st) * threads_nb);
 	bool* found = malloc(sizeof(bool));
 	*found = false;
+
+	long* tab_pow = malloc(sizeof(long) * (passwd_size + 1));
+
+	for (int i = 0; i <= passwd_size; i++) {
+		tab_pow[i] = (long) pow(alphabet_size, i);
+	}
+
 	for (int i = 0; i < threads_nb; i++) {
 		passwd[i].hash = argv[1];
 		passwd[i].salt = argv[2];
@@ -37,8 +45,18 @@ passwd_st* init_passwd(char** argv) {
 		passwd[i].cdata = malloc(sizeof(struct crypt_data));
 		passwd[i].cdata->initialized = 0;
 		passwd[i].found = found;
+		passwd[i].tab_pow = tab_pow;
 	}
 	return passwd;
+}
+
+void free_passwd(passwd_st* passwd) {
+	for (int i = 0; i < passwd->threads_nb; i++) {
+		free(passwd[i].cdata);
+	}
+	free(passwd->tab_pow);
+	free(passwd->found);
+	free(passwd);
 }
 
 /**
@@ -46,15 +64,15 @@ passwd_st* init_passwd(char** argv) {
  * en fonction de sa position dans l'espace des possibilités
  * ou combinaisons de mots de passe (en fonction de l'alphabet).
  */
-int pass_len(long position) {
+int pass_len(long position, long tab_pow[]) {
 	int i = 1;
 	long min = 0;
-	long max = (long) (pow(alphabet_size, i));
+	long max = tab_pow[i];
 	
 	while (!(min <= position && position < max)) {
 		min = max;
 		i++;
-		max += (long) (pow(alphabet_size, i));
+		max += tab_pow[i];
 	}
 
 	return i;
@@ -65,26 +83,26 @@ int pass_len(long position) {
  * même pattern de mot de passe (ex: le mot de passe "abb" est constitué
  * de "bb" sur les bits de poids faible).
  */
-long sub_index(int pass_len_actual, int pass_len_previous, long position) {
+long sub_index(int pass_len_actual, int pass_len_previous, long position, long tab_pow[]) {
 	if (pass_len_actual == pass_len_previous) {
 		return position;
 	}
 	else {
-		long past_position = (long) pow(alphabet_size, pass_len_actual - 1);
+		long past_position = tab_pow[pass_len_actual - 1];
 		long new_position = position - past_position;
-		while (pass_len(new_position) == pass_len_actual) {
+		while (pass_len(new_position, tab_pow) == pass_len_actual) {
 			new_position = new_position - past_position;
 		}
-		return sub_index(pass_len_actual - 1, pass_len_previous, new_position);
+		return sub_index(pass_len_actual - 1, pass_len_previous, new_position, tab_pow);
 	}
 }
 
-void gen_str(char* str, long position, int pass_len_start) {
-	int pass_len_actual = pass_len(position);
+void gen_str(char* str, long position, int pass_len_start, long tab_pow[]) {
+	int pass_len_actual = pass_len(position, tab_pow);
 	if (pass_len_actual == 1)
 		str[pass_len_start - 1] = alphabet[position];
 	else {
-		long sub_position = sub_index(pass_len_actual, pass_len_actual - 1, position);
+		long sub_position = sub_index(pass_len_actual, pass_len_actual - 1, position, tab_pow);
 		int index = 0;
 		long new_position = position;
 		int pass_len_past = pass_len_actual - 1;
@@ -93,22 +111,22 @@ void gen_str(char* str, long position, int pass_len_start) {
 			index = pass_len_start - pass_len_actual;
 
 		for (int i = pass_len_past; i > 0; i--)
-			new_position = new_position - (long) pow(alphabet_size, i);
+			new_position = new_position - tab_pow[i];
 
-		str[index] = alphabet[new_position / (long) pow(alphabet_size, pass_len_past)];
-		gen_str(str, sub_position, pass_len_start);
+		str[index] = alphabet[new_position / tab_pow[pass_len_past]];
+		gen_str(str, sub_position, pass_len_start, tab_pow);
 	}
 }
 
 void* thread(void* arg) {
 	passwd_st* passwd = (passwd_st*) arg;
-	char* str = malloc(passwd_size + 1);
+	char* str = malloc(sizeof(char) * (passwd_size + 1));
 	long position = passwd->thread_id;
 
 	while (!*(passwd->found)) {
-		gen_str(str, position, pass_len(position));
+		gen_str(str, position, pass_len(position, passwd->tab_pow), passwd->tab_pow);
 		position += passwd->threads_nb;
-		// printf("%ld\n", position);
+
 		if (strcmp(crypt_r(str, passwd->salt, passwd->cdata), passwd->hash) == 0) {
 			printf("%s\n", str);
 			*(passwd->found) = true;
@@ -124,7 +142,6 @@ int main(int argc, char** argv) {
 		struct timespec start, finish;
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		int threads_nb = atoi(argv[3]);
-		// initialisation des threads et des structures
 		pthread_t t[threads_nb];
 		bool* found;
 		passwd_st* passwd = init_passwd(argv);
@@ -138,6 +155,9 @@ int main(int argc, char** argv) {
 		if (!*found) {
 			printf("No match found\n");
 		}
+
+		free_passwd(passwd);
+
 		clock_gettime(CLOCK_MONOTONIC, &finish);
 		double elapsed = finish.tv_sec - start.tv_sec;
 		elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
