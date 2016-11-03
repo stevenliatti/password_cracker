@@ -139,7 +139,10 @@ long sub_index(int pass_len_actual, int pass_len_previous, long position, long* 
 }
 
 /**
- * This function 
+ * This function generate a password from the position in the area of possibilities
+ * and a password length and store it in the str argument. It generate the most 
+ * significant digit at the beginning of the recursion. At the nexts recursions, it 
+ * generate the nexts digits until the last, where the recursion terminate.
  *
  * @param str the array of char where is store the password to test
  * @param position the position of the string in the space of possibilities
@@ -147,7 +150,7 @@ long sub_index(int pass_len_actual, int pass_len_previous, long position, long* 
  * @param array_pow array of long, it contains all the powers of alphabet_size (from 1 to passwd_size)
  * @return void
  */
-void gen_str(char* str, long position, int pass_len_start, long* array_pow) {
+void gen_passwd(char* str, long position, int pass_len_start, long* array_pow) {
 	int pass_len_actual = pass_len(position, array_pow);
 	if (pass_len_actual == 1)
 		str[pass_len_start - 1] = alphabet[position];
@@ -164,12 +167,18 @@ void gen_str(char* str, long position, int pass_len_start, long* array_pow) {
 			new_position = new_position - array_pow[i];
 
 		str[index] = alphabet[new_position / array_pow[pass_len_past]];
-		gen_str(str, sub_position, pass_len_start, array_pow);
+		gen_passwd(str, sub_position, pass_len_start, array_pow);
 	}
 }
 
 /**
- * This function 
+ * This function is called at the creation of a thread. It generate the
+ * sequence of positions in function of the thread ID and the number of
+ * threads. With those positions, each thread generate their strings to
+ * hash and test if it equals to the hash in argument of the program.
+ *
+ * If a thread found the password, it print it in the standard output
+ * and cancel the other threads with a boolean mecanism.
  *
  * @param arg a void pointer, in reality the array passwd_st needed
  * @return if the password is found or not
@@ -180,7 +189,7 @@ void* thread(void* arg) {
 	long position = passwd->thread_id;
 
 	while (!*(passwd->found)) {
-		gen_str(str, position, pass_len(position, passwd->array_pow), passwd->array_pow);
+		gen_passwd(str, position, pass_len(position, passwd->array_pow), passwd->array_pow);
 		position += passwd->threads_nb;
 
 		if (strcmp(crypt_r(str, passwd->salt, passwd->cdata), passwd->hash) == 0) {
@@ -194,7 +203,9 @@ void* thread(void* arg) {
 }
 
 /**
- * This function 
+ * This is the main function. It initialize the variables, launch the threads,
+ * print if the solution is not found, free the memory in use and calculate the 
+ * execution time of the program.
  *
  * @param argc 
  * @param argv
