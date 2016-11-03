@@ -1,3 +1,22 @@
+/**
+* @file crack.c
+* @brief A password cracker
+*
+* This file contains a brute force password
+* cracker multithreaded. The program need a
+* password hash with him salt and a number of
+* threads for the execution. He test all the 
+* combinations from the alphabet declared and
+* the password's max size. 
+*
+* @author Steven Liatti
+* @author Orphée Antoniadis
+* @author Ludovic Gindre
+* @bug No known bugs.
+* @date November 3, 2016
+* @version 1.0
+*/
+
 #define _GNU_SOURCE
 #include <crypt.h>
 
@@ -22,11 +41,11 @@ typedef struct passwd_st {
 	int thread_id;
 	struct crypt_data* cdata;
 	bool* found;
-	long* tab_pow;
+	long* array_pow;
 } passwd_st;
 
 /**
- * This function initialize our array of passwd_st
+ * This function initialize our array of passwd_st.
  *
  * @param argv array of arguments, each argument is a string
  * @return passwd pointer on passwd_st
@@ -37,10 +56,10 @@ passwd_st* init_passwd(char** argv) {
 	bool* found = malloc(sizeof(bool));
 	*found = false;
 
-	long* tab_pow = malloc(sizeof(long) * (passwd_size + 1));
+	long* array_pow = malloc(sizeof(long) * (passwd_size + 1));
 
 	for (int i = 0; i <= passwd_size; i++) {
-		tab_pow[i] = (long) pow(alphabet_size, i);
+		array_pow[i] = (long) pow(alphabet_size, i);
 	}
 
 	for (int i = 0; i < threads_nb; i++) {
@@ -51,13 +70,13 @@ passwd_st* init_passwd(char** argv) {
 		passwd[i].cdata = malloc(sizeof(struct crypt_data));
 		passwd[i].cdata->initialized = 0;
 		passwd[i].found = found;
-		passwd[i].tab_pow = tab_pow;
+		passwd[i].array_pow = array_pow;
 	}
 	return passwd;
 }
 
 /**
- * This function free our array of passwd_st
+ * This function free our array of passwd_st.
  *
  * @param passwd array of passwd_st
  * @return void
@@ -66,62 +85,74 @@ void free_passwd(passwd_st* passwd) {
 	for (int i = 0; i < passwd->threads_nb; i++) {
 		free(passwd[i].cdata);
 	}
-	free(passwd->tab_pow);
+	free(passwd->array_pow);
 	free(passwd->found);
 	free(passwd);
 }
 
 /**
  * This function returns the length of a password
- * at the position in the area of possibilities
+ * at the position in the area of possibilities.
  *
  * @param position the position of the string in the space of possibilities
- * @param tab_pow array of long, it contains all the powers of alphabet_size (from 1 to passwd_size)
+ * @param array_pow array of long, it contains all the powers of alphabet_size (from 1 to passwd_size)
  * @return the length of the password at the position in argument
  */
-int pass_len(long position, long* tab_pow) {
+int pass_len(long position, long* array_pow) {
 	int len = 1;
 	long min = 0;
-	long max = tab_pow[len];
+	long max = array_pow[len];
 	
 	while (!(min <= position && position < max)) {
 		min = max;
 		len++;
-		max += tab_pow[len];
+		max += array_pow[len];
 	}
 
 	return len;
 }
 
 /**
- * Cette fonction retourne une position précédente ou se trouve le
- * même pattern de mot de passe (ex: le mot de passe "abb" est constitué
- * de "bb" sur les bits de poids faible).
+ * This function return a previous position that include the same password pattern
+ * (example: the password "abb" has "bb" in the least significant digits). To navigate in
+ * the area of possibilities, the function jump from power of the alphabet to another
+ * power of the alphabet, it use the pass_len function.
  *
+ * @param pass_len_actual the actual length of the password
+ * @param pass_len_previous the previous length of the password, generaly pass_len_actual - 1
  * @param position the position of the string in the space of possibilities
- * @param tab_pow array of long, it contains all the powers of alphabet_size (from 1 to passwd_size)
- * @return the length of the password at the position in argument
+ * @param array_pow array of long, it contains all the powers of alphabet_size (from 1 to passwd_size)
+ * @return the previous positon in the area of possibilities which contains the pattern that actual position need
  */
-long sub_index(int pass_len_actual, int pass_len_previous, long position, long* tab_pow) {
+long sub_index(int pass_len_actual, int pass_len_previous, long position, long* array_pow) {
 	if (pass_len_actual == pass_len_previous) {
 		return position;
 	}
 	else {
-		long past_position = tab_pow[pass_len_actual - 1];
+		long past_position = array_pow[pass_len_actual - 1];
 		long new_position = position - past_position;
-		while (pass_len(new_position, tab_pow) == pass_len_actual) {
+		while (pass_len(new_position, array_pow) == pass_len_actual) {
 			new_position = new_position - past_position;
 		}
-		return sub_index(pass_len_actual - 1, pass_len_previous, new_position, tab_pow);
+		return sub_index(pass_len_actual - 1, pass_len_previous, new_position, array_pow);
 	}
 }
 
-void gen_str(char* str, long position, int pass_len_start, long* tab_pow) {
-	int pass_len_actual = pass_len(position, tab_pow);
+/**
+ * This function 
+ *
+ * @param str the array of char where is store the password to test
+ * @param position the position of the string in the space of possibilities
+ * @param pass_len_start the length of the password at the beginning of the search
+ * @param array_pow array of long, it contains all the powers of alphabet_size (from 1 to passwd_size)
+ * @return void
+ */
+void gen_str(char* str, long position, int pass_len_start, long* array_pow) {
+	int pass_len_actual = pass_len(position, array_pow);
 	if (pass_len_actual == 1)
 		str[pass_len_start - 1] = alphabet[position];
 	else {
-		long sub_position = sub_index(pass_len_actual, pass_len_actual - 1, position, tab_pow);
+		long sub_position = sub_index(pass_len_actual, pass_len_actual - 1, position, array_pow);
 		int index = 0;
 		long new_position = position;
 		int pass_len_past = pass_len_actual - 1;
@@ -130,20 +161,26 @@ void gen_str(char* str, long position, int pass_len_start, long* tab_pow) {
 			index = pass_len_start - pass_len_actual;
 
 		for (int i = pass_len_past; i > 0; i--)
-			new_position = new_position - tab_pow[i];
+			new_position = new_position - array_pow[i];
 
-		str[index] = alphabet[new_position / tab_pow[pass_len_past]];
-		gen_str(str, sub_position, pass_len_start, tab_pow);
+		str[index] = alphabet[new_position / array_pow[pass_len_past]];
+		gen_str(str, sub_position, pass_len_start, array_pow);
 	}
 }
 
+/**
+ * This function 
+ *
+ * @param arg a void pointer, in reality the array passwd_st needed
+ * @return if the password is found or not
+ */
 void* thread(void* arg) {
 	passwd_st* passwd = (passwd_st*) arg;
 	char* str = malloc(sizeof(char) * (passwd_size + 1));
 	long position = passwd->thread_id;
 
 	while (!*(passwd->found)) {
-		gen_str(str, position, pass_len(position, passwd->tab_pow), passwd->tab_pow);
+		gen_str(str, position, pass_len(position, passwd->array_pow), passwd->array_pow);
 		position += passwd->threads_nb;
 
 		if (strcmp(crypt_r(str, passwd->salt, passwd->cdata), passwd->hash) == 0) {
@@ -156,6 +193,13 @@ void* thread(void* arg) {
 	return passwd->found;
 }
 
+/**
+ * This function 
+ *
+ * @param argc 
+ * @param argv
+ * @return the code's exit of program
+ */
 int main(int argc, char** argv) {
 	if (argc == 4) {
 		struct timespec start, finish;
